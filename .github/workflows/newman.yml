@@ -1,22 +1,20 @@
-
----
-
-### **f) .github/workflows/newman.yml**
-Nội dung mẫu:
-
-```yaml
-name: API Tests (Postman + Newman)
+name: Newman + Deploy Pages
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   run-newman:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -27,16 +25,26 @@ jobs:
       - name: Install newman + reporter
         run: npm i -g newman newman-reporter-htmlextra
 
-      - name: Run Newman tests
+      - name: Run newman and produce HTML
         run: |
+          mkdir -p docs
           newman run Petstore_Collection.json \
             -e Petstore-Demo.postman_environment.json \
-            -d TestData/pets.csv \
-            -r cli,htmlextra \
-            --reporter-htmlextra-export Newman_Reports/report.html
+            --reporters "cli,htmlextra" \
+            --reporter-htmlextra-export docs/index.html
 
-      - name: Upload report artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: newman-report
-          path: Newman_Reports/report.html
+          path: docs
+
+  deploy:
+    needs: run-newman
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
