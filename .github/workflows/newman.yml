@@ -1,0 +1,42 @@
+
+---
+
+### **f) .github/workflows/newman.yml**
+Nội dung mẫu:
+
+```yaml
+name: API Tests (Postman + Newman)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  run-newman:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install newman + reporter
+        run: npm i -g newman newman-reporter-htmlextra
+
+      - name: Run Newman tests
+        run: |
+          newman run Petstore_Collection.json \
+            -e Petstore-Demo.postman_environment.json \
+            -d TestData/pets.csv \
+            -r cli,htmlextra \
+            --reporter-htmlextra-export Newman_Reports/report.html
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: Newman_Reports/report.html

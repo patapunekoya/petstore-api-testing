@@ -1,0 +1,233 @@
+{
+	"info": {
+		"_postman_id": "5f0c8239-8510-49eb-b10d-d8c3ca5e22aa",
+		"name": "Petstore – QA Portfolio",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48319095",
+		"_collection_link": "https://avionics-geoscientist-85600705-8098669.postman.co/workspace/Ph%25C6%25B0%25E1%25BB%259Bc-Phan-T%25E1%25BA%25A5n's-Workspace~c81337fb-fa82-45cb-81ff-ae6183d9dfeb/collection/48319095-5f0c8239-8510-49eb-b10d-d8c3ca5e22aa?action=share&source=collection_link&creator=48319095"
+	},
+	"item": [
+		{
+			"name": "Tạo pet",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Sinh runId để tránh trùng dữ liệu\r",
+							"pm.environment.set(\"runId\", Date.now());\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"const j = pm.response.json();\r",
+							"pm.test(\"Có id và name\", () => {\r",
+							"  pm.expect(j).to.have.property(\"id\");\r",
+							"  pm.expect(j).to.have.property(\"name\");\r",
+							"});\r",
+							"pm.environment.set(\"petId\", j.id);        // dùng cho GET/PUT/DELETE\r",
+							"pm.test(\"Thời gian < 1000ms\", () => pm.expect(pm.response.responseTime).below(1000));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"id\": 0,\r\n  \"name\": \"doggo-{{runId}}\",\r\n  \"status\": \"available\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/pet?baseUrl=https://petstore.swagger.io/v2&petId&runId={{$timestamp}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"pet"
+					],
+					"query": [
+						{
+							"key": "baseUrl",
+							"value": "https://petstore.swagger.io/v2"
+						},
+						{
+							"key": "petId",
+							"value": null
+						},
+						{
+							"key": "runId",
+							"value": "{{$timestamp}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Lấy pet theo ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"let json = pm.response.json();\r",
+							"pm.expect(json.id).to.eql(parseInt(pm.environment.get(\"petId\")));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/pet/{{petId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"pet",
+						"{{petId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cập nhật pet",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
+							"const j = pm.response.json();\r",
+							"pm.test(\"Đã cập nhật name\", () => pm.expect(j.name).to.include(\"-updated\"));\r",
+							"pm.test(\"Đã cập nhật status\", () => pm.expect(j.status).to.eql(\"sold\"));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"id\": {{petId}},\r\n  \"name\": \"doggo-{{runId}}-updated\",\r\n  \"status\": \"sold\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/pet",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"pet"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Xóa",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Xóa thành công\", () => {\r",
+							"  pm.expect([200, 404]).to.include(pm.response.code);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/pet/{{petId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"pet",
+						"{{petId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "negative",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Không tìm thấy\", () => pm.expect([404, 400]).to.include(pm.response.code));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"runId\", Date.now());\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/pet/999999999",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"pet",
+						"999999999"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
