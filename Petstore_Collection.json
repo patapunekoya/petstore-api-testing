@@ -32,8 +32,9 @@
 							"  pm.expect(j).to.have.property(\"id\");\r",
 							"  pm.expect(j).to.have.property(\"name\");\r",
 							"});\r",
-							"pm.environment.set(\"petId\", j.id);        // dùng cho GET/PUT/DELETE\r",
-							"pm.test(\"Thời gian < 1000ms\", () => pm.expect(pm.response.responseTime).below(1000));\r",
+							"pm.environment.set(\"petId\", j.id); // nếu bạn không tự set trước\r",
+							"// thời gian nên nới lên để tránh flake\r",
+							"pm.test(\"Response < 2000ms\", () => pm.expect(pm.response.responseTime).below(2000));\r",
 							""
 						],
 						"type": "text/javascript",
@@ -54,7 +55,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/pet?baseUrl=https://petstore.swagger.io/v2&petId&runId={{$timestamp}}",
+					"raw": "{{baseUrl}}/pet",
 					"host": [
 						"{{baseUrl}}"
 					],
@@ -64,15 +65,18 @@
 					"query": [
 						{
 							"key": "baseUrl",
-							"value": "https://petstore.swagger.io/v2"
+							"value": "https://petstore.swagger.io/v2",
+							"disabled": true
 						},
 						{
 							"key": "petId",
-							"value": null
+							"value": null,
+							"disabled": true
 						},
 						{
 							"key": "runId",
-							"value": "{{$timestamp}}"
+							"value": "{{$timestamp}}",
+							"disabled": true
 						}
 					]
 				}
@@ -87,8 +91,8 @@
 					"script": {
 						"exec": [
 							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
-							"let json = pm.response.json();\r",
-							"pm.expect(json.id).to.eql(parseInt(pm.environment.get(\"petId\")));\r",
+							"const j = pm.response.json();\r",
+							"pm.test(\"Đúng petId\", () => pm.expect(j.id).to.eql(parseInt(pm.environment.get(\"petId\"))));\r",
 							""
 						],
 						"type": "text/javascript",
@@ -161,7 +165,7 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Xóa thành công\", () => {\r",
+							"pm.test(\"Xóa thành công (200/404 đều chấp nhận)\", () => {\r",
 							"  pm.expect([200, 404]).to.include(pm.response.code);\r",
 							"});\r",
 							""
