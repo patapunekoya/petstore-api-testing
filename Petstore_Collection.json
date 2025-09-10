@@ -14,8 +14,10 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"// Sinh runId để tránh trùng dữ liệu\r",
 							"pm.environment.set(\"runId\", Date.now());\r",
+							"if (!pm.environment.get(\"petId\")) {\r",
+							"  pm.environment.set(\"petId\", Math.floor(100000 + Math.random() * 900000)); // 6 chữ số\r",
+							"}\r",
 							""
 						],
 						"type": "text/javascript",
@@ -47,7 +49,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"id\": 0,\r\n  \"name\": \"doggo-{{runId}}\",\r\n  \"status\": \"available\"\r\n}\r\n",
+					"raw": "{\r\n  \"id\": {{petId}},\r\n  \"name\": \"doggo-{{runId}}\",\r\n  \"status\": \"available\"\r\n}\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -61,23 +63,6 @@
 					],
 					"path": [
 						"pet"
-					],
-					"query": [
-						{
-							"key": "baseUrl",
-							"value": "https://petstore.swagger.io/v2",
-							"disabled": true
-						},
-						{
-							"key": "petId",
-							"value": null,
-							"disabled": true
-						},
-						{
-							"key": "runId",
-							"value": "{{$timestamp}}",
-							"disabled": true
-						}
 					]
 				}
 			},
@@ -90,6 +75,23 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"const retryKey = \"getPetRetry\";\r",
+							"const maxRetry = 2;\r",
+							"\r",
+							"if (pm.response.code === 404) {\r",
+							"  const n = parseInt(pm.environment.get(retryKey) || \"0\", 10);\r",
+							"  if (n < maxRetry) {\r",
+							"    pm.environment.set(retryKey, n + 1);\r",
+							"    console.warn(`404 sau khi tạo, thử lại lần ${n + 1}`);\r",
+							"    postman.setNextRequest(\"Lấy pet theo ID\"); // lặp lại chính request này\r",
+							"    return;\r",
+							"  }\r",
+							"}\r",
+							"\r",
+							"// reset counter sau khi thành công hoặc hết retry\r",
+							"pm.environment.unset(retryKey);\r",
+							"\r",
+							"// Khi tới đây, coi như ổn rồi\r",
 							"pm.test(\"Status 200\", () => pm.response.to.have.status(200));\r",
 							"const j = pm.response.json();\r",
 							"pm.test(\"Đúng petId\", () => pm.expect(j.id).to.eql(parseInt(pm.environment.get(\"petId\"))));\r",
